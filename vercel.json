@@ -4,6 +4,10 @@
   "framework": "remix",
   "installCommand": "pnpm install",
   "env": {
-    "VERCEL": "1"
+    "VERCEL": "1",
+    "NODE_OPTIONS": "--experimental-vm-modules"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }

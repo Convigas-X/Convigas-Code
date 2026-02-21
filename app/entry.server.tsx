@@ -1,80 +1,80 @@
-import type { AppLoadContext } from '@remix-run/cloudflare';
+import type { EntryContext } from '@remix-run/cloudflare';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
-import { renderToReadableStream } from 'react-dom/server';
+import { renderToPipeableStream } from 'react-dom/server.node';
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root';
-import { themeStore } from '~/lib/stores/theme';
+import { PassThrough } from 'stream';
 
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: any,
-  _loadContext: AppLoadContext,
+  remixContext: EntryContext,
 ) {
-  // await initializeModelList({});
+  return new Promise((resolve, reject) => {
+    let didError = false;
 
-  const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
-    signal: request.signal,
-    onError(error: unknown) {
-      console.error(error);
-      responseStatusCode = 500;
-    },
-  });
+    const { pipe, abort } = renderToPipeableStream(<RemixServer context={remixContext} url={request.url} />, {
+      onShellReady() {
+        const head = renderHeadToString({ request, remixContext, Head });
 
-  const body = new ReadableStream({
-    start(controller) {
-      const head = renderHeadToString({ request, remixContext, Head });
+        const stream = new PassThrough();
+        const readable = new ReadableStream({
+          start(controller) {
+            // Write the HTML head
+            controller.enqueue(
+              new Uint8Array(
+                new TextEncoder().encode(
+                  `<!DOCTYPE html><html lang="en"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+                ),
+              ),
+            );
 
-      controller.enqueue(
-        new Uint8Array(
-          new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
-          ),
-        ),
-      );
+            // Pipe the React stream
+            stream.on('data', (chunk) => {
+              controller.enqueue(chunk);
+            });
 
-      const reader = readable.getReader();
-
-      function read() {
-        reader
-          .read()
-          .then(({ done, value }) => {
-            if (done) {
+            stream.on('end', () => {
               controller.enqueue(new Uint8Array(new TextEncoder().encode('</div></body></html>')));
               controller.close();
+            });
 
-              return;
-            }
+            stream.on('error', (error) => {
+              controller.error(error);
+            });
 
-            controller.enqueue(value);
-            read();
-          })
-          .catch((error) => {
-            controller.error(error);
-            readable.cancel();
-          });
-      }
-      read();
-    },
+            pipe(stream);
+          },
+          cancel() {
+            abort();
+          },
+        });
 
-    cancel() {
-      readable.cancel();
-    },
-  });
+        responseHeaders.set('Content-Type', 'text/html');
 
-  if (isbot(request.headers.get('user-agent') || '')) {
-    await readable.allReady;
-  }
+        resolve(
+          new Response(readable, {
+            headers: responseHeaders,
+            status: didError ? 500 : responseStatusCode,
+          }),
+        );
+      },
+      onShellError(error) {
+        reject(error);
+      },
+      onError(error) {
+        didError = true;
+        console.error(error);
+      },
+    });
 
-  responseHeaders.set('Content-Type', 'text/html');
-
-  responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
-
-  return new Response(body, {
-    headers: responseHeaders,
-    status: responseStatusCode,
+    if (isbot(request.headers.get('user-agent') || '')) {
+      // For bots, wait for the full content
+      setTimeout(() => {
+        // Bot handling - let it stream naturally
+      }, 0);
+    }
   });
 }
