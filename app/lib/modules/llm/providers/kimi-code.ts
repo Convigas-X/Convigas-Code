@@ -7,14 +7,12 @@ import { createOpenAI } from '@ai-sdk/openai';
 export default class KimiCodeProvider extends BaseProvider {
   name = 'KimiCode';
   label = 'Kimi Code';
-  getApiKeyLink = 'https://platform.moonshot.cn/console/api-keys';
-  labelForGetApiKey = 'Get Moonshot API Key';
-  icon = 'i-ph:robot'; // Using robot icon as placeholder
+  getApiKeyLink = 'https://platform.moonshot.ai/console/api-keys';
+  labelForGetApiKey = 'Get Kimi API Key';
+  icon = 'i-ph:robot';
 
   config = {
     apiTokenKey: 'KIMI_CODE_API_KEY',
-    baseUrlKey: 'KIMI_CODE_BASE_URL',
-    baseUrl: 'https://api.moonshot.cn/v1',
   };
 
   staticModels: ModelInfo[] = [
@@ -39,11 +37,11 @@ export default class KimiCodeProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv?: Record<string, string>,
   ): Promise<ModelInfo[]> {
-    const { apiKey, baseUrl } = this.getProviderBaseUrlAndKey({
+    const { apiKey } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: settings,
       serverEnv: serverEnv as any,
-      defaultBaseUrlKey: 'KIMI_CODE_BASE_URL',
+      defaultBaseUrlKey: '',
       defaultApiTokenKey: 'KIMI_CODE_API_KEY',
     });
 
@@ -52,10 +50,11 @@ export default class KimiCodeProvider extends BaseProvider {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/models`, {
+      const response = await fetch('https://api.moonshot.ai/v1/models', {
         headers: {
           Authorization: `Bearer ${apiKey}`,
         },
+        signal: this.createTimeoutSignal(5000),
       });
 
       if (!response.ok) {
@@ -92,11 +91,11 @@ export default class KimiCodeProvider extends BaseProvider {
   }): LanguageModelV1 {
     const { model, serverEnv, apiKeys, providerSettings } = options;
 
-    const { apiKey, baseUrl } = this.getProviderBaseUrlAndKey({
+    const { apiKey } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: providerSettings?.[this.name],
       serverEnv: serverEnv as any,
-      defaultBaseUrlKey: 'KIMI_CODE_BASE_URL',
+      defaultBaseUrlKey: '',
       defaultApiTokenKey: 'KIMI_CODE_API_KEY',
     });
 
@@ -107,7 +106,7 @@ export default class KimiCodeProvider extends BaseProvider {
     }
 
     const openai = createOpenAI({
-      baseURL: baseUrl || 'https://api.moonshot.cn/v1',
+      baseURL: 'https://api.moonshot.ai/v1',
       apiKey,
     });
 
