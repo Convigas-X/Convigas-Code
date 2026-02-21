@@ -3,9 +3,8 @@
   "outputDirectory": "build/client",
   "framework": null,
   "installCommand": "pnpm install",
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/build/(.*)", "dest": "/build/$1" },
-    { "src": "/(.*)", "dest": "/api/index" }
+  "rewrites": [
+    { "source": "/build/(.*)", "destination": "/build/$1" },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
