@@ -1,80 +1,80 @@
-import type { EntryContext } from '@remix-run/cloudflare';
+import type { AppLoadContext } from '@remix-run/cloudflare';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
-import { renderToPipeableStream } from 'react-dom/server.node';
+import { renderToReadableStream } from 'react-dom/server';
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root';
-import { PassThrough } from 'stream';
+import { themeStore } from '~/lib/stores/theme';
 
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  remixContext: any,
+  _loadContext: AppLoadContext,
 ) {
-  return new Promise((resolve, reject) => {
-    let didError = false;
+  // await initializeModelList({});
 
-    const { pipe, abort } = renderToPipeableStream(<RemixServer context={remixContext} url={request.url} />, {
-      onShellReady() {
-        const head = renderHeadToString({ request, remixContext, Head });
+  const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
+    signal: request.signal,
+    onError(error: unknown) {
+      console.error(error);
+      responseStatusCode = 500;
+    },
+  });
 
-        const stream = new PassThrough();
-        const readable = new ReadableStream({
-          start(controller) {
-            // Write the HTML head
-            controller.enqueue(
-              new Uint8Array(
-                new TextEncoder().encode(
-                  `<!DOCTYPE html><html lang="en"><head>${head}</head><body><div id="root" class="w-full h-full">`,
-                ),
-              ),
-            );
+  const body = new ReadableStream({
+    start(controller) {
+      const head = renderHeadToString({ request, remixContext, Head });
 
-            // Pipe the React stream
-            stream.on('data', (chunk) => {
-              controller.enqueue(chunk);
-            });
+      controller.enqueue(
+        new Uint8Array(
+          new TextEncoder().encode(
+            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+          ),
+        ),
+      );
 
-            stream.on('end', () => {
+      const reader = readable.getReader();
+
+      function read() {
+        reader
+          .read()
+          .then(({ done, value }) => {
+            if (done) {
               controller.enqueue(new Uint8Array(new TextEncoder().encode('</div></body></html>')));
               controller.close();
-            });
 
-            stream.on('error', (error) => {
-              controller.error(error);
-            });
+              return;
+            }
 
-            pipe(stream);
-          },
-          cancel() {
-            abort();
-          },
-        });
+            controller.enqueue(value);
+            read();
+          })
+          .catch((error) => {
+            controller.error(error);
+            readable.cancel();
+          });
+      }
+      read();
+    },
 
-        responseHeaders.set('Content-Type', 'text/html');
+    cancel() {
+      readable.cancel();
+    },
+  });
 
-        resolve(
-          new Response(readable, {
-            headers: responseHeaders,
-            status: didError ? 500 : responseStatusCode,
-          }),
-        );
-      },
-      onShellError(error) {
-        reject(error);
-      },
-      onError(error) {
-        didError = true;
-        console.error(error);
-      },
-    });
+  if (isbot(request.headers.get('user-agent') || '')) {
+    await readable.allReady;
+  }
 
-    if (isbot(request.headers.get('user-agent') || '')) {
-      // For bots, wait for the full content
-      setTimeout(() => {
-        // Bot handling - let it stream naturally
-      }, 0);
-    }
+  responseHeaders.set('Content-Type', 'text/html');
+
+  responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
+
+  return new Response(body, {
+    headers: responseHeaders,
+    status: responseStatusCode,
   });
 }
