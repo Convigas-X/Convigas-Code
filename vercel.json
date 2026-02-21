@@ -1,13 +1,11 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "build/client",
-  "framework": "remix",
+  "framework": null,
   "installCommand": "pnpm install",
-  "env": {
-    "VERCEL": "1",
-    "NODE_OPTIONS": "--experimental-vm-modules"
-  },
-  "engines": {
-    "node": "20.x"
-  }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/build/(.*)", "dest": "/build/$1" },
+    { "src": "/(.*)", "dest": "/api/index" }
+  ]
 }
