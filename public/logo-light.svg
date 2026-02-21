@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 50" width="220" height="42">
+  <defs>
+    <linearGradient id="redGradLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#EF4444;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#DC2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B91C1C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Convigas- text in dark for light mode -->
+  <text x="5" y="32" font-family="'Orbitron', 'Segoe UI', system-ui, sans-serif" font-size="22" font-weight="700" fill="#1a1a2e" letter-spacing="0.5" font-style="italic">Convigas-</text>
+  
+  <!-- Code text in red -->
+  <text x="148" y="32" font-family="'Orbitron', 'Segoe UI', system-ui, sans-serif" font-size="22" font-weight="700" fill="url(#redGradLight)" letter-spacing="0.5" font-style="italic">Code</text>
+  
+  <!-- Decorative sharp accent line -->
+  <path d="M 5 40 L 235 40" stroke="#EF4444" stroke-width="2" opacity="0.6" />
+  <path d="M 235 40 L 230 38 M 235 40 L 230 42" stroke="#EF4444" stroke-width="2" opacity="0.6" />
+</svg>

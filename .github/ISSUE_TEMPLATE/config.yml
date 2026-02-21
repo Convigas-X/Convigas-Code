@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Convigas-Code related issues
+    url: https://github.com/stackblitz/Convigas-Code/issues/new/choose
+    about: Report issues related to Convigas-Code (not Convigas-Code)
+  - name: Chat
+    url: https://thinktank.ottomator.ai
+    about: Ask questions and discuss with other Convigas-Code users.
