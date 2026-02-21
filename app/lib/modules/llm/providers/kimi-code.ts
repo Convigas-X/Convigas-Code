@@ -30,6 +30,27 @@ export default class KimiCodeProvider extends BaseProvider {
       maxTokenAllowed: 128000,
       maxCompletionTokens: 4096,
     },
+    {
+      name: 'kimi-latest',
+      label: 'Kimi Latest',
+      provider: 'KimiCode',
+      maxTokenAllowed: 128000,
+      maxCompletionTokens: 4096,
+    },
+    {
+      name: 'kimi-k2-turbo-preview',
+      label: 'Kimi K2 Turbo',
+      provider: 'KimiCode',
+      maxTokenAllowed: 128000,
+      maxCompletionTokens: 4096,
+    },
+    {
+      name: 'kimi-thinking-preview',
+      label: 'Kimi Thinking',
+      provider: 'KimiCode',
+      maxTokenAllowed: 128000,
+      maxCompletionTokens: 4096,
+    },
   ];
 
   async getDynamicModels(
@@ -58,6 +79,7 @@ export default class KimiCodeProvider extends BaseProvider {
       });
 
       if (!response.ok) {
+        console.error(`Kimi Code API error: ${response.status} ${response.statusText}`);
         return this.staticModels;
       }
 
