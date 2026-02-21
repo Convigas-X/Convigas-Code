@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "build/client",
+  "framework": "remix",
+  "installCommand": "pnpm install",
+  "env": {
+    "VERCEL": "1"
+  }
+}
